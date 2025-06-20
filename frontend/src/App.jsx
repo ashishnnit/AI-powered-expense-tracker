@@ -12,6 +12,7 @@ import TransactionForm from "./components/Transactions/TransactionForm";
 import Dashboard from "./components/Users/Dashboard";
 import UserProfile from "./components/Users/UserProfile";
 import AuthRoute from "./components/Auth/AuthRoute";
+import ChatBotPage from "./components/ChatBot/ChatBotPage"; 
 
 function App() {
   const user = useSelector((state) => state?.auth?.user);
@@ -70,6 +71,14 @@ function App() {
           element={
             <AuthRoute>
               <UserProfile />
+            </AuthRoute>
+          }
+        />
+         <Route
+          path="/chat"
+          element={
+            <AuthRoute>
+              <ChatBotPage />
             </AuthRoute>
           }
         />

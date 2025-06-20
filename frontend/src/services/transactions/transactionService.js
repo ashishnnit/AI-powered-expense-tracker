@@ -32,27 +32,28 @@ export const addTransactionAPI = async ({
   return response.data;
 };
 
-//! update
-export const updateCategoryAPI = async ({ name, type, id }) => {
-  const response = await axios.put(
-    `${BASE_URL}/categories/update/${id}`,
-    {
-      name,
-      type,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-  //Return a promise
-  return response.data;
-};
+ //! update
+// export const updateCategoryAPI = async ({ name, type, id }) => {
+//   const response = await axios.put(
+//     `${BASE_URL}/transactions/update/${id}`,
+//     {
+//       name,
+//       type,
+//     },
+//     {
+//       headers: {
+//         Authorization: `Bearer ${token}`,
+//       },
+//     }
+//   );
+//   //Return a promise
+//   return response.data;
+// };
 
 //! delete
 export const deleteCategoryAPI = async (id) => {
-  const response = await axios.delete(`${BASE_URL}/categories/delete/${id}`, {
+
+  const response = await axios.delete(`${BASE_URL}/transactions/delete/${id}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

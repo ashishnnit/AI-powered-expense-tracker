@@ -9,7 +9,6 @@ import { loginAPI } from "../../services/users/userService";
 import AlertMessage from "../Alert/AlertMessage";
 import { loginAction } from "../../redux/slice/authSlice";
 
-//! Validations
 const validationSchema = Yup.object({
   email: Yup.string().email("Invalid").required("Email is required"),
   password: Yup.string()
@@ -18,11 +17,8 @@ const validationSchema = Yup.object({
 });
 
 const LoginForm = () => {
-  //Navigate
   const navigate = useNavigate();
-  //Dispatch
   const dispatch = useDispatch();
-  // Mutation
   const { mutateAsync, isPending, isError, error, isSuccess } = useMutation({
     mutationFn: loginAPI,
     mutationKey: ["login"],
@@ -33,23 +29,17 @@ const LoginForm = () => {
       email: "",
       password: "",
     },
-    // Validations
     validationSchema,
-    //Submit
     onSubmit: (values) => {
-      console.log(values);
-      //http request
       mutateAsync(values)
         .then((data) => {
-          //dispatch
           dispatch(loginAction(data));
-          //Save the user into localStorage
           localStorage.setItem("userInfo", JSON.stringify(data));
         })
         .catch((e) => console.log(e));
     },
   });
-  //Redirect
+  
   useEffect(() => {
     setTimeout(() => {
       if (isSuccess) {
@@ -57,62 +47,87 @@ const LoginForm = () => {
       }
     }, 3000);
   }, [isPending, isError, error, isSuccess]);
+  
   return (
-    <form
-      onSubmit={formik.handleSubmit}
-      className="max-w-md mx-auto my-10 bg-white p-6 rounded-xl shadow-lg space-y-6 border border-gray-200"
-    >
-      <h2 className="text-3xl font-semibold text-center text-gray-800">
-        Login
-      </h2>
-      {/* Display messages */}
-      {isPending && <AlertMessage type="loading" message="Login you in...." />}
-      {isError && (
-        <AlertMessage type="error" message={error.response.data.message} />
-      )}
-      {isSuccess && <AlertMessage type="success" message="Login success" />}
-      <p className="text-sm text-center text-gray-500">
-        Login to access your account
-      </p>
-
-      {/* Input Field - Email */}
-      <div className="relative">
-        <FaEnvelope className="absolute top-3 left-3 text-gray-400" />
-        <input
-          id="email"
-          type="email"
-          {...formik.getFieldProps("email")}
-          placeholder="Email"
-          className="pl-10 pr-4 py-2 w-full rounded-md border border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-        />
-        {formik.touched.email && formik.errors.email && (
-          <span className="text-xs text-red-500">{formik.errors.email}</span>
-        )}
-      </div>
-
-      {/* Input Field - Password */}
-      <div className="relative">
-        <FaLock className="absolute top-3 left-3 text-gray-400" />
-        <input
-          id="password"
-          type="password"
-          {...formik.getFieldProps("password")}
-          placeholder="Password"
-          className="pl-10 pr-4 py-2 w-full rounded-md border border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-        />
-        {formik.touched.password && formik.errors.password && (
-          <span className="text-xs text-red-500">{formik.errors.password}</span>
-        )}
-      </div>
-
-      {/* Submit Button */}
-      <button
-        type="submit"
-        className="w-full bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline transition duration-150 ease-in-out"
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-cyan-100 p-4">
+      <form 
+        onSubmit={formik.handleSubmit}
+        className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-indigo-100"
       >
-        Login
-      </button>
-    </form>
+        <div className="bg-gradient-to-r from-indigo-600 to-cyan-500 p-6 text-center">
+          <h2 className="text-3xl font-bold text-white">Welcome Back</h2>
+          <p className="text-indigo-200 mt-2">Sign in to your account</p>
+        </div>
+        
+        <div className="p-8 space-y-6">
+          {/* Status Messages */}
+          <div className="space-y-4">
+            {isPending && <AlertMessage type="loading" message="Logging you in..." />}
+            {isError && <AlertMessage type="error" message={error.response?.data?.message || "Login failed"} />}
+            {isSuccess && <AlertMessage type="success" message="Login successful" />}
+          </div>
+
+          {/* Email Field */}
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-sm font-medium text-gray-700">Email</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaEnvelope className="h-5 w-5 text-indigo-400" />
+              </div>
+              <input
+                id="email"
+                type="email"
+                {...formik.getFieldProps("email")}
+                className="block w-full pl-10 pr-4 py-3 bg-indigo-50 rounded-lg border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:outline-none transition"
+                placeholder="your@email.com"
+              />
+            </div>
+            {formik.touched.email && formik.errors.email && (
+              <p className="text-sm text-rose-500 mt-1">{formik.errors.email}</p>
+            )}
+          </div>
+
+          {/* Password Field */}
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-sm font-medium text-gray-700">Password</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaLock className="h-5 w-5 text-indigo-400" />
+              </div>
+              <input
+                id="password"
+                type="password"
+                {...formik.getFieldProps("password")}
+                className="block w-full pl-10 pr-4 py-3 bg-indigo-50 rounded-lg border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:outline-none transition"
+                placeholder="••••••••"
+              />
+            </div>
+            {formik.touched.password && formik.errors.password && (
+              <p className="text-sm text-rose-500 mt-1">{formik.errors.password}</p>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-700 hover:to-cyan-600 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70"
+          >
+            {isPending ? 'Signing in...' : 'Sign In'}
+          </button>
+          
+          {/* Additional Options */}
+          <div className="flex items-center justify-between pt-2">
+            <a href="#" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+              Forgot password?
+            </a>
+            <a href="#" className="text-sm text-cyan-600 hover:text-cyan-800 font-medium">
+              Create account
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
   );
 };
 

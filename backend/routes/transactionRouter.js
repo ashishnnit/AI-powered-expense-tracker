@@ -20,11 +20,11 @@ transactionRouter.get(
 );
 
 //! update
-transactionRouter.put(
-  "/api/v1/transactions/update/:id",
-  isAuthenticated,
-  transactionController.update
-);
+// transactionRouter.put(
+//   "/api/v1/transactions/update/:id",
+//   isAuthenticated,
+//   transactionController.update
+// );
 
 //! delete
 transactionRouter.delete(

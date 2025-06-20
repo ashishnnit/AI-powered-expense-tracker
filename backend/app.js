@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const errorHandler = require('./middlewares/errorHandlerMiddleware');
 const categoryRouter = require('./routes/categoryRouter');
 const transactionRouter = require('./routes/transactionRouter');
+const geminiRouter = require("./routes/geminiRouter");
 
 
 //! Connect mongodb here
@@ -25,6 +26,7 @@ app.use(express.json()); // To parse JSON bodies
 app.use("/", userRouter);
 app.use("/", categoryRouter);
 app.use("/", transactionRouter);
+app.use("/", geminiRouter);
 
 //! Error handling middleware
 app.use(errorHandler);
