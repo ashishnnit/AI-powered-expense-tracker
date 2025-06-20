@@ -90,9 +90,9 @@ const ChatBotPage = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
+    <div className="h-[92vh] flex flex-col bg-gray-100 ">
       <div className="bg-gradient-to-r from-blue-600 to-teal-500 text-white p-4 text-center text-xl font-bold shadow-md">
-        Gemini AI Chat Assistant
+      Your Personal Finance Assistant
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
