@@ -78,3 +78,17 @@ export const listTransactionsAPI = async ({
   //Return a promise
   return response.data;
 };
+
+//! API to extract transaction from voice
+export const extractTransactionFromVoiceAPI = async (input) => {
+  const response = await axios.post(
+    `${BASE_URL}/gemini/extract-transaction`,
+    { input },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data; 
+};

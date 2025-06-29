@@ -62,3 +62,19 @@ export const listCategoriesAPI = async () => {
   //Return a promise
   return response.data;
 };
+
+//! Extract category from voice input using Gemini
+export const extractCategoryFromVoiceAPI = async (input) => {
+ 
+  const response = await axios.post(
+    `${BASE_URL}/gemini/extract-category`,
+    { input},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    } 
+  );
+
+  return response.data;
+};

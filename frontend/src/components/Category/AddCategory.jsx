@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { FaWallet } from "react-icons/fa";
+import { FaWallet, FaMicrophone } from "react-icons/fa";
 import { SiDatabricks } from "react-icons/si";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { addCategoryAPI } from "../../services/category/categoryService";
+import {
+  addCategoryAPI,
+  extractCategoryFromVoiceAPI,
+} from "../../services/category/categoryService";
 import AlertMessage from "../Alert/AlertMessage";
 
 const validationSchema = Yup.object({
@@ -17,9 +20,19 @@ const validationSchema = Yup.object({
 
 const AddCategory = () => {
   const navigate = useNavigate();
-  const { mutateAsync, isPending, isError, error, isSuccess } = useMutation({
+  const recognitionRef = useRef(null);
+  const [listening, setListening] = useState(false);
+  const [voiceLoading, setVoiceLoading] = useState(false); // 👈 loader state
+
+  const {
+    mutateAsync: addCategory,
+    isPending,
+    isError,
+    error,
+    isSuccess,
+  } = useMutation({
     mutationFn: addCategoryAPI,
-    mutationKey: ["login"],
+    mutationKey: ["add-category"],
   });
 
   const formik = useFormik({
@@ -29,21 +42,90 @@ const AddCategory = () => {
     },
     validationSchema,
     onSubmit: (values) => {
-      mutateAsync(values)
+      addCategory(values)
         .then(() => navigate("/categories"))
         .catch(console.error);
     },
   });
+
+  useEffect(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
+      const recognition = new SR();
+      recognition.lang = "en-US";
+      recognition.interimResults = false;
+      recognition.continuous = false;
+
+      recognition.onresult = async (event) => {
+        const voiceText = event.results[0][0].transcript;
+        setListening(false);
+        setVoiceLoading(true); // 👈 show loader
+        try {
+          const { category } = await extractCategoryFromVoiceAPI(voiceText);
+          if (category?.type && category?.name) {
+            await addCategory(category);
+            navigate("/categories"); // 👈 will automatically unmount component
+          } else {
+            alert("Gemini couldn't understand the voice input.");
+          }
+        } catch (err) {
+          console.error("Voice processing error:", err);
+          alert("Something went wrong while processing your voice input.");
+        } finally {
+          setVoiceLoading(false); // 👈 hide if error occurs
+        }
+      };
+
+      recognition.onerror = recognition.onend = () => {
+        setListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const handleVoiceAdd = () => {
+    if (recognitionRef.current) {
+      setListening(true);
+      recognitionRef.current.start(); // Ask permission and start mic
+    } else {
+      alert("Voice recognition not supported in this browser.");
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100 p-4">
       <div className="w-full max-w-md">
         <div className="bg-gradient-to-r from-purple-600 to-indigo-700 rounded-t-2xl p-5 text-center">
           <h2 className="text-2xl font-bold text-white">Create New Category</h2>
-          <p className="text-purple-200 mt-1 text-sm">Organize your finances with custom categories</p>
+          <p className="text-purple-200 mt-1 text-sm">
+            Organize your finances with custom categories
+          </p>
         </div>
-        
+
         <div className="bg-white rounded-b-2xl shadow-xl p-6 border border-purple-100">
+          {voiceLoading && (
+            <div className="flex items-center justify-center text-indigo-600 font-medium mb-4">
+              <svg className="animate-spin h-5 w-5 mr-2 text-indigo-600" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                />
+              </svg>
+              Processing voice input and creating category...
+            </div>
+          )}
+
           <form onSubmit={formik.handleSubmit} className="space-y-5">
             <div className="space-y-4">
               {isError && (
@@ -51,7 +133,7 @@ const AddCategory = () => {
                   type="error"
                   message={
                     error?.response?.data?.message ||
-                    "Something happened please try again later"
+                    "Something happened, please try again later"
                   }
                 />
               )}
@@ -71,7 +153,7 @@ const AddCategory = () => {
                   </div>
                   <h3 className="font-medium text-purple-800">Category Type</h3>
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">
                     Transaction Type
@@ -97,7 +179,7 @@ const AddCategory = () => {
                   </div>
                   <h3 className="font-medium text-indigo-800">Category Details</h3>
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">
                     Category Name
@@ -115,13 +197,22 @@ const AddCategory = () => {
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-2 space-y-3">
               <button
                 type="submit"
                 disabled={isPending}
                 className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white font-medium rounded-lg shadow-md transition duration-300 disabled:opacity-70"
               >
-                {isPending ? 'Adding...' : 'Create Category'}
+                {isPending ? "Adding..." : "Create Category"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleVoiceAdd}
+                disabled={voiceLoading}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-medium rounded-lg shadow-md transition duration-300 disabled:opacity-70"
+              >
+                <FaMicrophone /> {listening ? "Listening..." : "Add via Voice"}
               </button>
             </div>
           </form>

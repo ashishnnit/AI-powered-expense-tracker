@@ -1,9 +1,8 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useFormik } from "formik";
 import { useNavigate } from "react-router-dom";
 import * as Yup from "yup";
 import { useMutation, useQuery } from "@tanstack/react-query";
-
 
 import {
   FaDollarSign,
@@ -14,7 +13,7 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 import { listCategoriesAPI } from "../../services/category/categoryService";
-import { addTransactionAPI } from "../../services/transactions/transactionService";
+import { addTransactionAPI, extractTransactionFromVoiceAPI } from "../../services/transactions/transactionService";
 import AlertMessage from "../Alert/AlertMessage";
 
 const validationSchema = Yup.object({
@@ -31,7 +30,10 @@ const validationSchema = Yup.object({
 
 const TransactionForm = () => {
   const navigate = useNavigate();
-  
+  const recognitionRef = useRef(null);
+  const [listening, setListening] = useState(false);
+  const [voiceLoading, setVoiceLoading] = useState(false);
+
   const {
     mutateAsync,
     isPending,
@@ -42,7 +44,7 @@ const TransactionForm = () => {
     mutationFn: addTransactionAPI,
     mutationKey: ["add-transaction"],
   });
-  
+
   const { 
     data, 
     isError, 
@@ -62,11 +64,58 @@ const TransactionForm = () => {
     },
     validationSchema,
     onSubmit: (values) => {
-      mutateAsync(values) .then(() => navigate("/dashboard"))
-      .catch(console.error);
-
+      mutateAsync(values)
+        .then(() => navigate("/dashboard"))
+        .catch(console.error);
     },
   });
+
+  useEffect(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
+      const recognition = new SR();
+      recognition.lang = "en-US";
+      recognition.interimResults = false;
+      recognition.continuous = false;
+
+      recognition.onresult = async (event) => {
+        const voiceText = event.results[0][0].transcript;
+        setListening(false);
+        setVoiceLoading(true);
+        try {
+          const { transaction } = await extractTransactionFromVoiceAPI(voiceText);
+          console.log("Extracted transaction:", transaction);
+          if (transaction?.type && transaction?.amount && transaction?.category) {
+            console.log("Voice transaction:", transaction);
+            await mutateAsync(transaction);
+            navigate("/dashboard");
+          } else {
+            alert("Gemini couldn't understand the voice input.");
+          }
+        } catch (err) {
+          console.error("Voice processing error:", err);
+          alert("Something went wrong while processing your voice input.");
+        } finally {
+          setVoiceLoading(false);
+        }
+      };
+
+      recognition.onerror = recognition.onend = () => {
+        setListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const handleVoiceAdd = () => {
+    if (recognitionRef.current) {
+      setListening(true);
+      recognitionRef.current.start();
+    } else {
+      alert("Voice recognition not supported in this browser.");
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100 p-4">
@@ -92,14 +141,36 @@ const TransactionForm = () => {
         </div>
 
         <div className="bg-white rounded-b-2xl shadow-xl p-6">
+          {/* Voice Processing Loader */}
+          {voiceLoading && (
+            <div className="flex items-center justify-center text-indigo-600 font-medium mb-4">
+              <svg className="animate-spin h-5 w-5 mr-2 text-indigo-600" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                />
+              </svg>
+              Processing voice input and creating transaction...
+            </div>
+          )}
+
           <form onSubmit={formik.handleSubmit} className="space-y-5">
-            {/* Alert Messages */}
             <div className="space-y-3">
               {isError && (
                 <AlertMessage
                   type="error"
                   message={
-                    error?.response?.data?.message ||
+                    transErr?.response?.data?.message ||
                     "Failed to load categories"
                   }
                 />
@@ -121,9 +192,7 @@ const TransactionForm = () => {
               )}
             </div>
 
-            {/* Type and Amount */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Type Field */}
               <div className="space-y-1">
                 <label className="block text-gray-700 text-sm font-medium">
                   <div className="flex items-center">
@@ -151,7 +220,6 @@ const TransactionForm = () => {
                 )}
               </div>
 
-              {/* Amount Field */}
               <div className="space-y-1">
                 <label className="block text-gray-700 text-sm font-medium">
                   <div className="flex items-center">
@@ -178,9 +246,7 @@ const TransactionForm = () => {
               </div>
             </div>
 
-            {/* Category and Date */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Category Field */}
               <div className="space-y-1">
                 <label className="block text-gray-700 text-sm font-medium">
                   <div className="flex items-center">
@@ -214,7 +280,6 @@ const TransactionForm = () => {
                 )}
               </div>
 
-              {/* Date Field */}
               <div className="space-y-1">
                 <label className="block text-gray-700 text-sm font-medium">
                   <div className="flex items-center">
@@ -240,7 +305,6 @@ const TransactionForm = () => {
               </div>
             </div>
 
-            {/* Description Field */}
             <div className="space-y-1">
               <label className="block text-gray-700 text-sm font-medium">
                 <div className="flex items-center">
@@ -256,8 +320,7 @@ const TransactionForm = () => {
               ></textarea>
             </div>
 
-            {/* Submit Button */}
-            <div className="pt-4">
+            <div className="pt-4 space-y-3">
               <button
                 type="submit"
                 disabled={isPending}
@@ -297,6 +360,15 @@ const TransactionForm = () => {
                     <span>Add Transaction</span>
                   </>
                 )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleVoiceAdd}
+                disabled={voiceLoading}
+                className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white font-medium rounded-lg shadow-md transition duration-300 disabled:opacity-60"
+              >
+                {voiceLoading ? "Processing voice..." : "Add via Voice"}
               </button>
             </div>
           </form>

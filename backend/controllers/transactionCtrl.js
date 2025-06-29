@@ -7,6 +7,7 @@ const transactionController = {
   //!add
   create: asyncHandler(async (req, res) => {
     const { type, category, amount, date, description } = req.body;
+
     if (!amount || !type || !date) {
       throw new Error("Type, amount and date are required");
     }
@@ -16,6 +17,7 @@ const transactionController = {
       type,
       category,
       amount,
+      date,
       description,
     });
     res.status(201).json(transaction);
