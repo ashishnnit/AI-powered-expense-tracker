@@ -9,6 +9,7 @@ import { loginAPI } from "../../services/users/userService";
 import AlertMessage from "../Alert/AlertMessage";
 import { loginAction } from "../../redux/slice/authSlice";
 
+
 const validationSchema = Yup.object({
   email: Yup.string().email("Invalid").required("Email is required"),
   password: Yup.string()
@@ -43,7 +44,7 @@ const LoginForm = () => {
   useEffect(() => {
     setTimeout(() => {
       if (isSuccess) {
-        navigate("/profile");
+        navigate("/dashboard");
       }
     }, 3000);
   }, [isPending, isError, error, isSuccess]);
@@ -117,14 +118,14 @@ const LoginForm = () => {
           </button>
           
           {/* Additional Options */}
-          <div className="flex items-center justify-between pt-2">
+          {/* <div className="flex items-center justify-between pt-2">
             <a href="#" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
               Forgot password?
             </a>
             <a href="#" className="text-sm text-cyan-600 hover:text-cyan-800 font-medium">
               Create account
             </a>
-          </div>
+          </div> */}
         </div>
       </form>
     </div>

@@ -59,7 +59,7 @@ const AddCategory = () => {
       recognition.onresult = async (event) => {
         const voiceText = event.results[0][0].transcript;
         setListening(false);
-        setVoiceLoading(true); // 👈 show loader
+        setVoiceLoading(true); 
         try {
           const { category } = await extractCategoryFromVoiceAPI(voiceText);
           if (category?.type && category?.name) {
